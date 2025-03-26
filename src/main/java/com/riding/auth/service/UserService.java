@@ -82,16 +82,16 @@ public class UserService implements UserDetailsService {
 		user.setFullName(user.getFirstName() + " " + user.getLastName());
 		user.setEmail(requestUser.getEmail());
 		user.setMobile(requestUser.getMobile());
-		user.setDeviceId(requestUser.getDeviceId());
+//		user.setDeviceId(requestUser.getDeviceId());
 		user.setFcmToken(Objects.nonNull(requestUser.getFcmId()) ? requestUser.getFcmId() : null);
 		user.setPassword(passwordEncoder
 				.encode((Boolean.TRUE.equals(Objects.nonNull(requestUser.getPassword()))) ? requestUser.getPassword()
 						: "123456"));
-		if (Objects.isNull(requestUser.getUserRole())) {
-			user.setUserRole(UserRoles.ROLE_USER);
-		} else {
-			user.setUserRole(requestUser.getUserRole());
-		}
+//		if (Objects.isNull(requestUser.getUserRole())) {
+//			user.setUserRole(UserRoles.ROLE_USER);
+//		} else {
+//			user.setUserRole(requestUser.getUserRole());
+//		}
 		user.setMobileVerified(false);
 		user.setEmailVerified(false);
 		User result = userRepository.save(user);

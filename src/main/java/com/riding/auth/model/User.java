@@ -34,25 +34,16 @@ public class User {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-	@Column(name = "device_imei")
-	private String deviceImei;
-	@Column(name = "device_id")
-	private String deviceId;
-	@Column(name = "device_model")
-	private String deviceModel;
 	@Column(name = "fcm_token")
 	private String fcmToken;
 	@Column(name = "account")
 	private String account;
-	@Enumerated(EnumType.STRING)
-	@Column(name = "user_role")
-	private UserRoles userRole;
+	@Column(name = "user_role_id")
+	private Long userRoleId;
 	@Column(name = "user_name")
 	private String userName;
 	@Column(name = "password")
 	private String password;
-	@Column(name = "title")
-	private String title;
 	@Column(name = "first_name", columnDefinition = "varchar(5)")
 	private String firstName;
 	@Column(name = "last_name")

@@ -12,7 +12,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -66,12 +65,9 @@ public class AuthController {
 		} else {
 			signUpRequest.setProvider(signUpRequest.getProvider());
 			User result = userService.createorUpdateUser(signUpRequest);
-//			int otp = otpService.generateOTP(result.getId());
-//			log.debug("OTP generated for {} is {}", result.getId(), otp);
 			log.info("User Creation : {} ", result);
 			UserDto userInfo = new UserDto();
 			Utils.copyProperties(result, userInfo);
-//			log.debug("OTP send result: {}", sendOtp(userInfo, otp, signUpRequest.getProvider()));
 			return RestUtils.successResponse(userInfo, "User has been provisioned for channel: ", HttpStatus.CREATED);
 		}
 	}
@@ -86,16 +82,6 @@ public class AuthController {
 		log.info("{}", userInfo);
 		if (Boolean.TRUE.equals(Objects.isNull(userInfo))) {
 			return RestUtils.errorResponse(null, Constants.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-		} else if (Boolean.FALSE.equals(userInfo.getMobileVerified())) {
-			log.error("mobile number: {}, of user: {}, not verified. ");
-//			Integer otp = otpService.generateOTP(userInfo.getId());
-			UserDto userInfoDto = new UserDto();
-			Utils.copyProperties(userInfo, userInfoDto);
-//			log.info("OTP send result: {}", sendOtp(userInfoDto, otp, AuthProvider.local));
-			AuthResponse auth = new AuthResponse();
-			Utils.copyProperties(userInfo, auth);
-			return RestUtils.errorResponse(auth, "User has been provisioned for reverification on channel: "
-					+ userInfo.getProvider() + ", please reverify the OTP. ()", HttpStatus.FAILED_DEPENDENCY);
 		} else {
 			log.info("Going into user authentication block {}.", userInfo);
 			Authentication authentication = null;
@@ -108,7 +94,6 @@ public class AuthController {
 			}
 			SecurityContextHolder.getContext().setAuthentication(authentication);
 			String token = tokenProvider.generateToken(UserPrincipal.create(userInfo));
-
 			authentication = SecurityContextHolder.getContext().getAuthentication();
 			UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
 			if (Objects.nonNull(loginRequest.getFcmId())) {
@@ -123,8 +108,6 @@ public class AuthController {
 			auth.setFirstName(userPrincipal.getFirstName());
 			auth.setLastName(userPrincipal.getLastName());
 			auth.setTokenType("Bearer");
-			auth.setRole(userPrincipal.getRole());
-
 			return (Boolean.TRUE.equals(Objects.nonNull(token)))
 					? RestUtils.successResponse(auth, Constants.SUCCESS, HttpStatus.OK)
 					: RestUtils.errorResponse(auth, Constants.FAIL, HttpStatus.BAD_REQUEST);

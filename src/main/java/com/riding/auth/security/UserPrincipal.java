@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -12,7 +11,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import com.riding.auth.model.User;
-import com.riding.auth.model.enums.UserRoles;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,10 +19,11 @@ public class UserPrincipal implements OAuth2User, UserDetails {
 	private static final long serialVersionUID = -5062647961800884179L;
 	private Long id;
 	private String mobile;
+
 	@Override
 	public String toString() {
 		return "UserPrincipal [id=" + id + ", mobile=" + mobile + ", email=" + email + ", password=" + password
-				+ ", authorities=" + authorities + ", attributes=" + attributes + ", role=" + role + ", account="
+				+ ", authorities=" + authorities + ", attributes=" + attributes + ", role=" + userRoleId + ", account="
 				+ account + ", firstName=" + firstName + ", lastName=" + lastName + ", gender=" + gender + ", isOtp="
 				+ isOtp + ", otp=" + otp + ", user=" + user + "]";
 	}
@@ -33,7 +32,7 @@ public class UserPrincipal implements OAuth2User, UserDetails {
 	private String password;
 	private Collection<? extends GrantedAuthority> authorities;
 	private Map<String, Object> attributes;
-	private UserRoles role;
+	private Long userRoleId;
 	private String account;
 	private String firstName;
 	private String lastName;
@@ -43,14 +42,13 @@ public class UserPrincipal implements OAuth2User, UserDetails {
 	private User user;
 
 	public UserPrincipal(Long id, String mobile, String email, String password,
-			Collection<? extends GrantedAuthority> authorities, UserRoles role, String account, String firstName,
-			String lastName, String gender, Boolean isOtp, String otp, User user) {
+			Collection<? extends GrantedAuthority> authorities, String account, String firstName, String lastName,
+			String gender, Boolean isOtp, String otp, User user, Long userRoleId) {
 		this.id = id;
 		this.mobile = mobile;
 		this.email = email;
 		this.password = password;
 		this.authorities = authorities;
-		this.role = role;
 		this.account = account;
 		this.firstName = firstName;
 		this.lastName = lastName;
@@ -58,18 +56,16 @@ public class UserPrincipal implements OAuth2User, UserDetails {
 		this.isOtp = isOtp;
 		this.otp = otp;
 		this.user = user;
+		this.userRoleId = userRoleId;
 	}
 
 	public static UserPrincipal create(User user) {
 		log.debug("User: {}", user);
 		SimpleGrantedAuthority grantAuthority = new SimpleGrantedAuthority("ROLE_USER");
-		if (Boolean.TRUE.equals(Objects.nonNull(user.getUserRole()))) {
-			grantAuthority = new SimpleGrantedAuthority(UserRoles.fromId(user.getUserRole().getId()).toString());
-		}
 		List<GrantedAuthority> authorities = Collections.singletonList(grantAuthority);
 		return new UserPrincipal(user.getId(), user.getMobile(), user.getEmail(), user.getPassword(), authorities,
-				user.getUserRole(), user.getAccount(), user.getFirstName(), user.getLastName(), user.getGender(),
-				user.getIsOtp(), user.getOtp(), user);
+				user.getAccount(), user.getFirstName(), user.getLastName(), user.getGender(), user.getIsOtp(),
+				user.getOtp(), user, user.getUserRoleId());
 	}
 
 	public String getMobile() {
@@ -114,12 +110,12 @@ public class UserPrincipal implements OAuth2User, UserDetails {
 		return userPrincipal;
 	}
 
-	public UserRoles getRole() {
-		return role;
+	public Long getUserRoleId() {
+		return userRoleId;
 	}
 
-	public void setRole(UserRoles role) {
-		this.role = role;
+	public void setUserRoleId(Long role) {
+		this.userRoleId = role;
 	}
 
 	public Long getId() {
