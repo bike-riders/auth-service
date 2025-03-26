@@ -1,6 +1,7 @@
 package com.riding.auth.service;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -33,7 +34,7 @@ public class UserService implements UserDetailsService {
 		return UserPrincipal.create(user);
 	}
 
-	public User createorUpdateUser(SignUpRequest requestUser) {
+	public User createorUpdateUser(SignUpRequest requestUser, boolean b) {
 		User user = null;
 		log.info("requestUser: {}", requestUser);
 		switch (requestUser.getProvider()) {
@@ -95,6 +96,10 @@ public class UserService implements UserDetailsService {
 		User user = userRepository.findById(valueOf)
 				.orElseThrow(() -> new UsernameNotFoundException("User not found with email or userName : " + valueOf));
 		return UserPrincipal.create(user);
+	}
+
+	public Optional<User> findByEmail(String email) {
+		return userRepository.findByEmail(email);
 	}
 
 }

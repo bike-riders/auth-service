@@ -64,7 +64,7 @@ public class AuthController {
 			throw new BadRequestException("Mobile Number already in use.");
 		} else {
 			signUpRequest.setProvider(signUpRequest.getProvider());
-			User result = userService.createorUpdateUser(signUpRequest);
+			User result = userService.createorUpdateUser(signUpRequest, false);
 			log.info("User Creation : {} ", result);
 			UserDto userInfo = new UserDto();
 			Utils.copyProperties(result, userInfo);
