@@ -93,7 +93,7 @@ public class AuthController {
 				return RestUtils.errorResponse(null, Constants.USER_NOT_FOUND, HttpStatus.UNAUTHORIZED);
 			}
 			SecurityContextHolder.getContext().setAuthentication(authentication);
-			String token = tokenProvider.generateToken(UserPrincipal.create(userInfo));
+			String token = tokenProvider.createToken(authentication);
 			authentication = SecurityContextHolder.getContext().getAuthentication();
 			UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
 			if (Objects.nonNull(loginRequest.getFcmId())) {

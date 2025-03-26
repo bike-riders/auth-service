@@ -1,5 +1,6 @@
 package com.riding.auth.model;
 
+import com.riding.auth.model.audit.UserDateAudit;
 import com.riding.auth.model.enums.AuthProvider;
 import com.riding.auth.model.enums.UserRoles;
 
@@ -28,7 +29,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-public class User {
+public class User extends UserDateAudit {
 
 	public static final String TABLE_NAME = "user";
 	@Id

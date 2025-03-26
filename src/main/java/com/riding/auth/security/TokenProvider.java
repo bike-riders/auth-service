@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -26,7 +27,12 @@ public class TokenProvider {
 	}
 
 	public String generateToken(UserDetails userDetails) {
-		return generateToken(new HashMap<>(), userDetails);
+		return generateToken(new HashMap<>(), userDetails.getUsername());
+	}
+
+	public String createToken(Authentication authentication) {
+		UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+		return generateToken(new HashMap<>(), Long.toString(userPrincipal.getId()));
 	}
 
 	public boolean isTokenValid(String token, UserDetails userDetails) {
@@ -39,8 +45,8 @@ public class TokenProvider {
 		return claimsResolvers.apply(claims);
 	}
 
-	private String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
-		return Jwts.builder().setClaims(extraClaims).setSubject(userDetails.getUsername())
+	private String generateToken(Map<String, Object> extraClaims, String userName) {
+		return Jwts.builder().setClaims(extraClaims).setSubject(userName)
 				.setIssuedAt(new Date(System.currentTimeMillis()))
 				.setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 7))
 				.signWith(getSigningKey(), SignatureAlgorithm.HS256).compact();
