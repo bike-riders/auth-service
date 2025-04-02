@@ -4,6 +4,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -24,6 +25,7 @@ public class UserService implements UserDetailsService {
 	@Autowired
 	private UserRepository userRepository;
 	@Autowired
+	@Lazy
 	private PasswordEncoder passwordEncoder;
 
 	@Override
@@ -37,20 +39,25 @@ public class UserService implements UserDetailsService {
 	public User createorUpdateUser(SignUpRequest requestUser, boolean b) {
 		User user = null;
 		log.info("requestUser: {}", requestUser);
-		switch (requestUser.getProvider()) {
-		case mobile:
-			user = userRepository.findByMobile(requestUser.getMobile()).orElse(null);
-			break;
-		case email:
+		if (requestUser.getProvider() != null) {
 			user = userRepository.findByEmail(requestUser.getEmail()).orElse(null);
-			break;
-		case local:
-			user = userRepository.findByUserName(requestUser.getUser()).orElse(null);
-			break;
-		default:
+
+			switch (requestUser.getProvider()) {
+			case mobile:
+				user = userRepository.findByMobile(requestUser.getMobile()).orElse(null);
+				break;
+			case email:
+				user = userRepository.findByEmail(requestUser.getEmail()).orElse(null);
+				break;
+			case local:
+				user = userRepository.findByUserName(requestUser.getUser()).orElse(null);
+				break;
+			default:
+				user = userRepository.findByEmail(requestUser.getEmail()).orElse(null);
+			}
+		} else {
 			user = userRepository.findByEmail(requestUser.getEmail()).orElse(null);
 		}
-
 		user = userRepository.findByEmailAndMobile(requestUser.getEmail(), requestUser.getMobile()).orElse(null);
 		Boolean isNewUser = Boolean.FALSE;
 		if (Boolean.TRUE.equals(Objects.isNull(user))) {

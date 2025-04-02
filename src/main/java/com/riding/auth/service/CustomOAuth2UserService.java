@@ -28,12 +28,13 @@ import lombok.extern.slf4j.Slf4j;
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
 	@Autowired
-	@Lazy
-	UserService userService;
+	private UserService userService;
 
 	@Override
 	public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
+		log.info("@UserRequest :{} ", userRequest.getClientRegistration().getRegistrationId());
 		OAuth2User oAuth2User = super.loadUser(userRequest);
+
 		try {
 			return processOAuth2User(userRequest, oAuth2User);
 		} catch (AuthenticationException ex) {
@@ -43,6 +44,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 			// OAuth2AuthenticationFailureHandler
 			ex.printStackTrace();
 			throw new InternalAuthenticationServiceException(ex.getMessage(), ex.getCause());
+//		
 		}
 	}
 

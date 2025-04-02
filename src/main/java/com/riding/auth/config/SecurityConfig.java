@@ -1,94 +1,93 @@
 package com.riding.auth.config;
 
-import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
 import com.riding.auth.security.TokenFilter;
+import com.riding.auth.security.oauth2.HttpCookieOAuth2AuthorizationRequestRepository;
+import com.riding.auth.security.oauth2.OAuth2AuthenticationFailureHandler;
 import com.riding.auth.security.oauth2.OAuth2LoginSuccessHandler;
 import com.riding.auth.service.CustomOAuth2UserService;
+import com.riding.auth.service.CustomOidcUserService;
 import com.riding.auth.service.UserService;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(securedEnabled = true, jsr250Enabled = true, prePostEnabled = true)
 public class SecurityConfig {
 
 	@Autowired
-	private TokenFilter jwtAuthenticationFilter;
-
-	@Autowired
-	@Lazy
 	private UserService userService;
 	@Autowired
 	private OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 	@Autowired
-	private CustomOAuth2UserService customOAuth2UserService;
+	CustomOAuth2UserService customOAuth2UserService;
+	@Autowired
+	CustomOidcUserService customOidcUserService;
+	@Autowired
+	OAuth2AuthenticationFailureHandler auth2AuthenticationFailureHandler;
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http.csrf(AbstractHttpConfigurer::disable)
-				.authorizeHttpRequests(request -> request
-						.requestMatchers("/v3/api-docs/**", "/swagger-resources/**", "/swagger-ui/**", "/webjars/**",
-								"/csrf**/**", "/templates/**", "/index.html**", "/configuration/ui",
-								"/configuration/security", "/auth/**", "/login/**", "/oauth2/**")
-						.permitAll().anyRequest().authenticated())
-				.sessionManagement(manager -> manager.sessionCreationPolicy(STATELESS))
+
+				.authorizeHttpRequests(
+						request -> request
+								.requestMatchers("/v3/api-docs/**", "/swagger-resources/**", "/swagger-ui/**",
+										"/webjars/**", "/csrf**/**", "/templates/**", "/index.html**",
+										"/configuration/ui", "/configuration/security", "/auth/**", "/login/**",
+										"/oauth2/**", "/oauth2/authorization/**")
+								.permitAll().anyRequest().authenticated())
+				.sessionManagement(manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authenticationProvider(authenticationProvider())
-				.oauth2Login(
-						oauth2 -> oauth2.successHandler(oAuth2LoginSuccessHandler).failureUrl("/auth/oauth-failure")
-								.userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
-								.redirectionEndpoint(redirection -> redirection.baseUri("/oauth2/callback/*")))
-				.addFilterAfter(corsFilter(), BasicAuthenticationFilter.class)
-				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+				.oauth2Login(oauth2 -> oauth2
+						.authorizationEndpoint(authorization -> authorization
+								.authorizationRequestRepository(cookieAuthorizationRequestRepository()))
+						.redirectionEndpoint(redir -> redir.baseUri("/login/oauth2/code/*"))
+						.userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService)
+								.oidcUserService(customOidcUserService))
+						.successHandler(oAuth2LoginSuccessHandler).failureUrl("/auth/oauth-failure"))
+//				.addFilterAfter(corsFilter(), BasicAuthenticationFilter.class)
+				.addFilterBefore(tokenAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
 				.exceptionHandling(exception -> exception
 						.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)));
 		return http.build();
 	}
 
-//	@Bean
-//	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//		http.csrf(AbstractHttpConfigurer::disable).authorizeHttpRequests(request -> request
-//				.requestMatchers("/v3/api-docs/**", "/swagger-resources/**", "/swagger-ui/**", "/webjars/**",
-//						"/csrf**/**", "/templates/**", "/index.html**", "/configuration/ui", "/configuration/security")
-//				.permitAll().requestMatchers("/auth/**").permitAll().anyRequest().authenticated())
-//				.sessionManagement(manager -> manager.sessionCreationPolicy(STATELESS))
-//				.authenticationProvider(authenticationProvider())
-//				.addFilterAfter(corsFilter(), BasicAuthenticationFilter.class)
-//				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-//		return http.build();
-//	}
+	@Bean
+	TokenFilter tokenAuthenticationFilter() {
+		return new TokenFilter();
+	}
 
-//	@Bean
-//	public CorsFilter corsFilter() {
-//		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//		CorsConfiguration config = new CorsConfiguration();
-//		config.setAllowCredentials(true);
-//		config.setAllowedOrigins(Arrays.asList("*"));
-//		config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
-//		config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
-//		source.registerCorsConfiguration("/api/**", config);
-//		return new CorsFilter(source);
-//	}
+	@Bean
+	HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository() {
+		return new HttpCookieOAuth2AuthorizationRequestRepository();
+	}
 
 	@Bean
 	CorsFilter corsFilter() {

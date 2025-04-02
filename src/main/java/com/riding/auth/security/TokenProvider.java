@@ -6,21 +6,28 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.stereotype.Service;
+
+import com.riding.auth.config.AppProperties;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 public class TokenProvider {
-	@Value("${token.signing.key:413F4428472B4B6250655368566D5970337336763979244226452948404D6351}")
-	private String jwtSigningKey;
+
+	@Autowired
+	AppProperties appProperties;
 
 	public String extractUserName(String token) {
 		return extractClaim(token, Claims::getSubject);
@@ -31,8 +38,14 @@ public class TokenProvider {
 	}
 
 	public String createToken(Authentication authentication) {
-		UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-		return generateToken(new HashMap<>(), Long.toString(userPrincipal.getId()));
+		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		if (principal instanceof OidcUserPrincipalAdapter) {
+			OidcUserPrincipalAdapter oidcUser = (OidcUserPrincipalAdapter) principal;
+			return generateToken(new HashMap<>(), Long.toString(oidcUser.getUserPrincipal().getId()));
+		} else {
+			UserPrincipal userPrincipal = (UserPrincipal) principal;
+			return generateToken(new HashMap<>(), Long.toString(userPrincipal.getId()));
+		}
 	}
 
 	public boolean isTokenValid(String token, UserDetails userDetails) {
@@ -48,7 +61,7 @@ public class TokenProvider {
 	private String generateToken(Map<String, Object> extraClaims, String userName) {
 		return Jwts.builder().setClaims(extraClaims).setSubject(userName)
 				.setIssuedAt(new Date(System.currentTimeMillis()))
-				.setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 7))
+				.setExpiration(new Date(System.currentTimeMillis() + appProperties.getAuth().getTokenExpirationMsec()))
 				.signWith(getSigningKey(), SignatureAlgorithm.HS256).compact();
 	}
 
@@ -65,7 +78,7 @@ public class TokenProvider {
 	}
 
 	private Key getSigningKey() {
-		byte[] keyBytes = Decoders.BASE64.decode(jwtSigningKey);
+		byte[] keyBytes = Decoders.BASE64.decode(appProperties.getAuth().getTokenSecret());
 		return Keys.hmacShaKeyFor(keyBytes);
 	}
 }
