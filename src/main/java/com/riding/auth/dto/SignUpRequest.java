@@ -38,4 +38,17 @@ public class SignUpRequest {
 	private String imageUrl;
 	private String fcmId;
 	private Integer status;
+	private String profileImage;
+	private String profileBackGroundImage;
+	private String dateOfBirth;
+	private String age;
+	private String gender;
+	private String address1;
+	private String address2;
+	private String city;
+	private String state;
+	private String country;
+	private String pinCode;
+	private String latitude;
+	private String longitude;
 }
