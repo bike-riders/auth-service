@@ -1,6 +1,7 @@
 FROM openjdk:17-jdk-slim
 RUN pwd
 RUN ls -lrth
+RUN locate target/
 # Build context ke root me 'target' folder ko check karne ke liye
 RUN ls -l target || echo "target folder not found"
 
