@@ -27,7 +27,7 @@ RUN ls -lrth
 FROM openjdk:19-jdk
 VOLUME /tmp
 
-COPY --from=build /app/target/*.war app.war
+COPY --from=build /app/target/*.jar app.jar
 
-ENTRYPOINT ["java", "-jar", "/app.war"]
+ENTRYPOINT ["java", "-jar", "/app.jar"]
 EXPOSE 8080
