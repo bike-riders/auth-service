@@ -1,4 +1,4 @@
-FROM openjdk:17-jdk-slim
+FROM openjdk:17-jdk-slim AS build
 
 RUN ls -lrth
 WORKDIR /app
@@ -24,7 +24,10 @@ RUN ./mvnw clean package -DskipTests
 
 RUN ls -lrth
 
-ARG WAR_FILE=target/*.war
-COPY ${WAR_FILE} app.war
+FROM openjdk:19-jdk
+VOLUME /tmp
+
+COPY --from=build /app/target/*.war app.war
 
 ENTRYPOINT ["java", "-jar", "/app.war"]
+EXPOSE 8080
