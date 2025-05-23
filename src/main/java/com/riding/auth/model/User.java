@@ -45,7 +45,7 @@ public class User extends UserDateAudit {
 	private String userName;
 	@Column(name = "password")
 	private String password;
-	@Column(name = "first_name", columnDefinition = "varchar(5)")
+	@Column(name = "first_name")
 	private String firstName;
 	@Column(name = "last_name")
 	private String lastName;
