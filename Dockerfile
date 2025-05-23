@@ -1,9 +1,27 @@
 FROM openjdk:17-jdk-slim
-RUN pwd
+
 RUN ls -lrth
-RUN find . -name target
-# Build context ke root me 'target' folder ko check karne ke liye
-RUN ls -l target || echo "target folder not found"
+WORKDIR /app
+
+RUN ls -lrth
+
+COPY pom.xml .
+
+RUN ls -lrth
+COPY src src
+
+
+RUN ls -lrth
+# Copy Maven wrapper
+COPY mvnw .
+COPY .mvn .mvn
+
+
+RUN ls -lrth
+# Set execution permission for the Maven wrapper
+RUN chmod +x ./mvnw
+RUN ./mvnw clean package -DskipTests
+
 
 ARG WAR_FILE=target/*.war
 COPY ${WAR_FILE} app.war
