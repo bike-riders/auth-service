@@ -22,6 +22,7 @@ RUN ls -lrth
 RUN chmod +x ./mvnw
 RUN ./mvnw clean package -DskipTests
 
+RUN ls -lrth
 
 ARG WAR_FILE=target/*.war
 COPY ${WAR_FILE} app.war
